@@ -2,28 +2,19 @@ import { useState, useEffect } from "react";
 import Filter from "./components/Filter";
 import Numbers from "./components/Numbers";
 import PersonForm from "./components/PersonForm";
-import axios from "axios";
+import persons_service from "./services/persons_service";
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [search, setSearch] = useState("");
-
   useEffect(() => {
-    console.log('useEffect exec');
-    axios.get("http://localhost:3001/persons").then((response) => {
-      setPersons(response.data);
+    persons_service.getAll().then((list) => {
+      setPersons(list);
     });
   }, []);
-  console.log('out useEffect');
-
-  const checkUserExists = (user) => {
-    const dup = persons.find((person) => person.name === user);
-    return dup !== undefined && dup.name === user;
-  };
 
   const handleNameChange = (e) => {
-    // console.log(e.target.value);
     setNewName(e.target.value);
   };
   const handleNumberChange = (e) => {
@@ -34,28 +25,51 @@ const App = () => {
     setSearch(e.target.value);
   };
 
+  const handleRemove = (id,name) => {
+    if(window.confirm(`Delete ${name} ?`)){
+      persons_service.remove(id).then(() => {
+        setPersons((prevPersons) => prevPersons.filter((p) => p.id !== id));
+      });
+    }
+  }
   const filteredPersons = persons.filter((person) =>
     person.name.toLowerCase().includes(search.toLowerCase())
   );
-  // console.log(filteredPersons);
+
+  const findDupID = (name) => {
+    const index = persons.findIndex(p => p.name === name);
+    return index !== -1 ? persons[index].id : null;
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // console.log(checkUserExists(e.target.value));
     if ((newName == "") | (newNumber == "")) {
       alert("please fill in the required details");
-    } else if (checkUserExists(newName)) {
-      alert(`${newName} is already added to phonebook`);
+    }
+    else if(findDupID(newName)) {
+      // console.log('dup user found',newName);
+      const dupPersonID = (findDupID(newName))
+      if(window.confirm(`${newName} is already in the phonebook, replace the old number with new number?`)){
+        const updatedObj = {
+          name: newName,
+          number: newNumber,
+          id: dupPersonID
+        }
+        persons_service.updateNum(dupPersonID,updatedObj).then(returned => setPersons(persons.map(p => p.id != dupPersonID ? p : returned)))
+      }
       setNewName("");
       setNewNumber("");
       return; // Add a return statement to stop further execution
-    } else {
-      // console.log("AAA");
+    }
+     else {
       const newObj = {
         name: newName,
         number: newNumber,
+        id: (persons.length + 1).toString(),
       };
-      setPersons([...persons, newObj]);
+      persons_service
+        .create(newObj)
+        .then((result) => setPersons(persons.concat(result)));
     }
 
     setNewName("");
@@ -73,7 +87,12 @@ const App = () => {
         onNumChange={handleNumberChange}
         onFormSubmit={handleSubmit}
       />
-      {filteredPersons && <Numbers filterPersonsList={filteredPersons} />}
+      {filteredPersons && (
+        <Numbers
+          filterPersonsList={filteredPersons}
+          refreshList={handleRemove}
+        />
+      )}
     </div>
   );
 };
