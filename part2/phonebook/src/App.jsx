@@ -3,11 +3,14 @@ import Filter from "./components/Filter";
 import Numbers from "./components/Numbers";
 import PersonForm from "./components/PersonForm";
 import persons_service from "./services/persons_service";
+import Message from "./components/Message";
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newNumber, setNewNumber] = useState("");
   const [search, setSearch] = useState("");
+  const [message, setMessage] = useState(null);
+  const [color, setColor] = useState('green');
   useEffect(() => {
     persons_service.getAll().then((list) => {
       setPersons(list);
@@ -25,51 +28,64 @@ const App = () => {
     setSearch(e.target.value);
   };
 
-  const handleRemove = (id,name) => {
-    if(window.confirm(`Delete ${name} ?`)){
+  const handleRemove = (id, name) => {
+    if (window.confirm(`Delete ${name} ?`)) {
       persons_service.remove(id).then(() => {
         setPersons((prevPersons) => prevPersons.filter((p) => p.id !== id));
       });
     }
-  }
+  };
   const filteredPersons = persons.filter((person) =>
     person.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const findDupID = (name) => {
-    const index = persons.findIndex(p => p.name === name);
+    const index = persons.findIndex((p) => p.name === name);
     return index !== -1 ? persons[index].id : null;
-  }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if ((newName == "") | (newNumber == "")) {
       alert("please fill in the required details");
-    }
-    else if(findDupID(newName)) {
+    } else if (findDupID(newName)) {
       // console.log('dup user found',newName);
-      const dupPersonID = (findDupID(newName))
-      if(window.confirm(`${newName} is already in the phonebook, replace the old number with new number?`)){
+      const dupPersonID = findDupID(newName);
+      if (
+        window.confirm(
+          `${newName} is already in the phonebook, replace the old number with new number?`
+        )
+      ) {
         const updatedObj = {
           name: newName,
           number: newNumber,
-          id: dupPersonID
-        }
-        persons_service.updateNum(dupPersonID,updatedObj).then(returned => setPersons(persons.map(p => p.id != dupPersonID ? p : returned)))
+          id: dupPersonID,
+        };
+        persons_service
+          .updateNum(dupPersonID, updatedObj)
+          .then((returned) =>
+            setPersons(persons.map((p) => (p.id != dupPersonID ? p : returned)))
+          ).catch(() => {
+            setMessage(`${newName} has already been deleted from server`),
+            setColor('red')
+            setTimeout(() => setMessage(null),2000)
+          });
       }
       setNewName("");
       setNewNumber("");
       return; // Add a return statement to stop further execution
-    }
-     else {
+    } else {
       const newObj = {
         name: newName,
         number: newNumber,
         id: (persons.length + 1).toString(),
       };
-      persons_service
-        .create(newObj)
-        .then((result) => setPersons(persons.concat(result)));
+      persons_service.create(newObj).then((result) => {
+        setPersons(persons.concat(result)),
+          setMessage(`Added ${result.name}`),
+          setColor('green'),
+          setTimeout(() => setMessage(null), 2000);
+      });
     }
 
     setNewName("");
@@ -79,6 +95,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Message msg={message} msgColor={color}/>
       <Filter value={search} onChange={handleSearchChange} />
       <PersonForm
         ipName={newName}
