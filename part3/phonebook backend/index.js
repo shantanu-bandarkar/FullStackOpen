@@ -1,6 +1,16 @@
 const express = require("express");
 const app = express();
 app.use(express.json());
+const morgan = require("morgan");
+
+// Define a custom token to display request body
+morgan.token('tiny', function (req, res) {
+  return JSON.stringify(req.body);
+});
+
+// Use the custom token in the morgan middleware
+app.use(morgan(':method :url :status :res[content-length] - :response-time ms :tiny'));
+
 let notes = [
   {
     id: 1,
@@ -63,6 +73,17 @@ app.delete("/api/persons/:id", (request, response) => {
       .end("<p>Delete Operation failed: Person doesn't exists.");
   }
 });
+morgan(function (tokens, req, res) {
+  return [
+    tokens.method(req, res),
+    tokens.url(req, res),
+    tokens.status(req, res),
+    tokens.res(req, res, "content-length"),
+    "-",
+    tokens["response-time"](req, res),
+    "ms",
+  ].join(" ");
+});
 
 app.post("/api/persons", (request, response) => {
   const ipName = request.body.name;
@@ -79,7 +100,6 @@ app.post("/api/persons", (request, response) => {
   };
   notes = notes.concat(note);
   response.json(note);
-  console.log("note present", request.body);
 });
 const PORT = 3003;
 app.listen(PORT);
