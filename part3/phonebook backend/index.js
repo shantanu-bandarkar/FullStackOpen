@@ -1,59 +1,37 @@
+require("dotenv").config();
 const express = require("express");
 const app = express();
-const cors = require('cors')
-app.use(cors())
+const cors = require("cors");
+app.use(cors());
 app.use(express.json());
-app.use(express.static('dist'))
+app.use(express.static("dist"));
 const morgan = require("morgan");
+const Person = require("./model/person");
+const { log } = require("console");
 
 // Define a custom token to display request body
-morgan.token('tiny', function (req, res) {
+morgan.token("tiny", function (req, res) {
   return JSON.stringify(req.body);
 });
 
 // Use the custom token in the morgan middleware
-app.use(morgan(':method :url :status :res[content-length] - :response-time ms :tiny'));
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms :tiny")
+);
 
-let notes = [
-  {
-    id: 1,
-    name: "Arto Hellas",
-    number: "040-123456",
-  },
-  {
-    id: 2,
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-  },
-  {
-    id: 3,
-    name: "Dan Abramov",
-    number: "12-43-234345",
-  },
-  {
-    id: 4,
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-  },
-];
-// console.log("hey dude");
-// const app = http.createServer((request, response) => {
-//   if (request.url === "/api/persons") {
-//     response.writeHead(200, { "Content-type": "application/json" });
-//     response.end(JSON.stringify(notes));
-//   } else {
-//     response.writeHead(404, { "Content-type": "text/plain" });
-//     response.end("Not Found");
-//   }
-// });
 app.get("/api/persons", (request, response) => {
-  response.json(notes);
+  Person.find({}).then((result) => {
+    response.json(result);
+  });
 });
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = Number(request.params.id);
-  const note = notes.find((n) => n.id === id);
-  note ? response.json(note) : response.status(404).end();
+  const id = request.params.id;
+  Person.findById(id)
+    .then((result) => {
+      response.json(result);
+    })
+    .catch((e) => response.status(404).json({ error: "not found" }));
 });
 
 app.get("/info", (request, response) => {
@@ -93,17 +71,16 @@ app.post("/api/persons", (request, response) => {
   const ipNumber = request.body.number;
   if (!ipName || !ipNumber) {
     return response.status(206).json({ error: "name or number missing" });
-  } else if (notes.find((n) => n.name === ipName)) {
-    return response.status(409).json({ error: "name must be unique" });
   }
-  const note = {
-    id: Math.floor(Math.random() * 10000),
+  const person = new Person({
     name: ipName,
     number: ipNumber,
-  };
-  notes = notes.concat(note);
-  response.json(note);
+  });
+  person
+    .save()
+    .then((result) => response.json(result))
+    .catch((e) => console.log(e));
 });
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
