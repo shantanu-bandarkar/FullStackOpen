@@ -10,7 +10,7 @@ const App = () => {
   const [newNumber, setNewNumber] = useState("");
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState(null);
-  const [color, setColor] = useState('green');
+  const [color, setColor] = useState("green");
   useEffect(() => {
     persons_service.getAll().then((list) => {
       setPersons(list);
@@ -65,10 +65,11 @@ const App = () => {
           .updateNum(dupPersonID, updatedObj)
           .then((returned) =>
             setPersons(persons.map((p) => (p.id != dupPersonID ? p : returned)))
-          ).catch(() => {
-            setMessage(`${newName} has already been deleted from server`),
-            setColor('red')
-            setTimeout(() => setMessage(null),2000)
+          )
+          .catch((e) => {
+            setMessage(e.response.data.error),
+              setColor("red");
+            setTimeout(() => setMessage(null), 3000);
           });
       }
       setNewName("");
@@ -80,12 +81,19 @@ const App = () => {
         number: newNumber,
         id: (persons.length + 1).toString(),
       };
-      persons_service.create(newObj).then((result) => {
-        setPersons(persons.concat(result)),
-          setMessage(`Added ${result.name}`),
-          setColor('green'),
-          setTimeout(() => setMessage(null), 2000);
-      });
+      persons_service
+        .create(newObj)
+        .then((result) => {
+          setPersons(persons.concat(result)),
+            setMessage(`Added ${result.name}`),
+            setColor("green"),
+            setTimeout(() => setMessage(null), 3000);
+        })
+        .catch(
+          (e) => setMessage(e.response.data.error),
+          setColor("red"),
+          setTimeout(() => setMessage(null), 3000)
+        );
     }
 
     setNewName("");
@@ -95,7 +103,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Message msg={message} msgColor={color}/>
+      <Message msg={message} msgColor={color} />
       <Filter value={search} onChange={handleSearchChange} />
       <PersonForm
         ipName={newName}

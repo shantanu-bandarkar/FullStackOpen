@@ -16,7 +16,7 @@ const PersonForm = ({ipName,onNameChange, ipNum, onNumChange, onFormSubmit}) => 
         <div>
           <label htmlFor="number">number: </label>
           <input
-            type="number"
+            type='text'
             id="number"
             value={ipNum}
             onChange={onNumChange}
