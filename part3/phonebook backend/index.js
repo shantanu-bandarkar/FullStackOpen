@@ -9,115 +9,117 @@ const morgan = require("morgan");
 const Person = require("./model/person");
 
 // Define a custom token to display request body
+// eslint-disable-next-line no-unused-vars
 morgan.token("tiny", function (req, res) {
-  return JSON.stringify(req.body);
+    return JSON.stringify(req.body);
 });
 
 // Use the custom token in the morgan middleware
 app.use(
-  morgan(":method :url :status :res[content-length] - :response-time ms :tiny")
+    morgan(":method :url :status :res[content-length] - :response-time ms :tiny")
 );
 
 morgan(function (tokens, req, res) {
-  return [
-    tokens.method(req, res),
-    tokens.url(req, res),
-    tokens.status(req, res),
-    tokens.res(req, res, "content-length"),
-    "-",
-    tokens["response-time"](req, res),
-    "ms",
-  ].join(" ");
+    return [
+        tokens.method(req, res),
+        tokens.url(req, res),
+        tokens.status(req, res),
+        tokens.res(req, res, "content-length"),
+        "-",
+        tokens["response-time"](req, res),
+        "ms",
+    ].join(" ");
 });
 
-app.get("/api/persons", (request, response) => {
-  Person.find({}).then((result) => {
-    response.json(result);
-  });
+app.get("/api/persons", (_request, response) => {
+    Person.find({}).then((result) => {
+        response.json(result);
+    });
 });
 
 app.get("/api/persons/:id", (request, response) => {
-  const id = request.params.id;
-  Person.findById(id)
-    .then((result) => {
-      response.json(result);
-    })
-    .catch((e) => response.status(404).json({ error: "not found" }));
+    const id = request.params.id;
+    Person.findById(id)
+        .then((result) => {
+            response.json(result);
+        })
+        .catch(() => response.status(404).json({ error: "not found" }));
 });
 
-app.get("/info", async (request, response) => {
-  try {
-    const persons = await Person.find({});
-    const length = persons.length;
+app.get("/info", async (_request, response) => {
+    try {
+        const persons = await Person.find({});
+        const length = persons.length;
 
-    response.setHeader("Current-Time", new Date());
-    const dateHeader = response.getHeader("Current-Time");
+        response.setHeader("Current-Time", new Date());
+        const dateHeader = response.getHeader("Current-Time");
 
-    response.send(
-      `<p>Phonebook has info for ${length} people</p><p>${dateHeader}</p>`
-    );
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    response.status(500).send("Internal Server Error");
-  }
+        response.send(
+            `<p>Phonebook has info for ${length} people</p><p>${dateHeader}</p>`
+        );
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        response.status(500).send("Internal Server Error");
+    }
 });
 
 app.put("/api/persons/:id", (request, response, next) => {
-  const person = {
-    name: request.body.name,
-    number: request.body.number,
-  };
-  Person.findByIdAndUpdate(request.params.id, person, {
-    new: true,
-    runValidators: true,
-    context: "query",
-  })
-    .then((updatedPerson) => response.json(updatedPerson))
-    .catch((error) => next(error));
+    const person = {
+        name: request.body.name,
+        number: request.body.number,
+    };
+    Person.findByIdAndUpdate(request.params.id, person, {
+        new: true,
+        runValidators: true,
+        context: "query",
+    })
+        .then((updatedPerson) => response.json(updatedPerson))
+        .catch((error) => next(error));
 });
 
 app.delete("/api/persons/:id", (request, response, next) => {
-  Person.findByIdAndDelete(request.params.id)
-    .then((result) => response.status(204).json(result))
-    .catch((error) => next(error));
+    Person.findByIdAndDelete(request.params.id)
+        .then((result) => response.status(204).json(result))
+        .catch((error) => next(error));
 });
 
 app.post("/api/persons", (request, response, next) => {
-  const ipName = request.body.name;
-  const ipNumber = request.body.number;
-  if (!ipName || !ipNumber) {
-    return response.status(206).json({ error: "name or number missing" });
-  }
-  const person = new Person({
-    name: ipName,
-    number: ipNumber,
-  });
-  person
-    .save()
-    .then((result) => response.json(result))
-    .catch((e) => next(e));
+    const ipName = request.body.name;
+    const ipNumber = request.body.number;
+    if (!ipName || !ipNumber) {
+        return response.status(206).json({ error: "name or number missing" });
+    }
+    const person = new Person({
+        name: ipName,
+        number: ipNumber,
+    });
+    person
+        .save()
+        .then((result) => response.json(result))
+        .catch((e) => next(e));
 });
+// eslint-disable-next-line no-undef
 const PORT = process.env.PORT;
 app.listen(PORT);
 console.log(`Server running on port ${PORT}`);
 
-const unknownEndpoint = (request, response) => {
-  response.status(404).send({ error: "unknown endpoint" });
+const unknownEndpoint = (_request, response) => {
+    response.status(404).send({ error: "unknown endpoint" });
 };
 
 // handler of requests with unknown endpoint
 app.use(unknownEndpoint);
 
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message);
+const errorHandler = (error, _request, response, next) => {
+    console.error(error.message);
 
-  if (error.name === "CastError") {
-    return response.status(400).send({ error: "malformatted id" });
-  } else if (error.name === "ValidationError") {
-    return response.status(400).json({ error: error.message });
-  }
+    if (error.name === "CastError") {
+        return response.status(400).send({ error: "malformatted id" });
+    } else if (error.name === "ValidationError") {
+        return response.status(400).json({ error: error.message });
+    }
 
-  next(error);
+    next(error);
 };
 
 // this has to be the last loaded middleware.
