@@ -12,6 +12,17 @@ const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
 }
 
+const tokenExtracter = (request, response, next) => {
+    const authorization = request.get('authorization')
+    if (authorization && authorization.startsWith('Bearer ')) {
+        const token = authorization.replace('Bearer ', '');
+        request.token = token;
+    } else {
+        request.token = null;
+    }
+    next()
+}
+
 const errorHandler = (error, request, response, next) => {
     logger.error(error.message)
 
@@ -23,11 +34,18 @@ const errorHandler = (error, request, response, next) => {
     else if (error.name === 'MongoServerError' && error.message.includes('E11000 duplicate key error')) {
         return response.status(400).json({ error: 'expected `username` to be unique' })
     }
+    else if (error.name === 'JsonWebTokenError') {
+        return response.status(400).json({ error: 'token missing or invalid' })
+    }
+    else if (error.name === 'TokenExpiredError') {
+        return response.status(401).json({ error: 'token expired' })
+    }
     next(error)
 }
 
 module.exports = {
     requestLogger,
     unknownEndpoint,
+    tokenExtracter,
     errorHandler
 }
