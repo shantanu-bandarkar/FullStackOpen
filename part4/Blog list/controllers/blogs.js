@@ -24,7 +24,7 @@ blogsRouter.post('/', middleware.userExtracter, middleware.tokenExtracter, async
     const user = request.user
     const blog = new Blog({ ...request.body, user: request.user.id })
     const newBlog = await blog.save()
-    console.log('post blog result', newBlog);
+    // console.log('post blog result', newBlog);
     user.blogs = user.blogs.concat(newBlog._id)
     await user.save()
 
@@ -37,8 +37,8 @@ blogsRouter.delete('/:id', middleware.userExtracter, async (request, response, n
     const blog = await Blog.findById(request.params.id)
     // console.log('blog', blog);
     const user = request.user
-    console.log('user from backend', user.id);
-    console.log('user from blog', blog.user);
+    // console.log('user from backend', user.id);
+    // console.log('user from blog', blog.user);
     if (blog.user.toString() === user.id.toString()) {
         await Blog.findByIdAndDelete(request.params.id)
         response.status(204).end()
