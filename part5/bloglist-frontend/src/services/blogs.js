@@ -12,12 +12,28 @@ const getAll = () => {
   return request.then(response => response.data)
 }
 
-const create = async newObj => {
+const create = async (newObj) => {
   const config = {
     headers: { Authorization: token }
   }
   const response = await axios.post(baseUrl, newObj, config)
+  // console.log('axios o/p', response.data);
   return response.data
 }
 
-export default { getAll, create, setUserToken }
+const updateLikes = async (id, blogObj) => {
+  // console.log('BBB', id);
+  // console.log('CCC', blogObj);
+  const response = await axios.put(`${baseUrl}/${id}`, blogObj)
+  return response.data
+}
+
+const remove = async (id) => {
+  // console.log('BBB', id);
+  const config = {
+    headers: { Authorization: token }
+  }
+  await axios.delete(`${baseUrl}/${id}`, config)
+}
+
+export default { getAll, create, setUserToken, updateLikes, remove }

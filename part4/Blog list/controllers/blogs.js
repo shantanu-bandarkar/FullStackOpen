@@ -33,13 +33,12 @@ blogsRouter.post('/', middleware.userExtracter, middleware.tokenExtracter, async
     response.status(201).json(res)
 })
 
-blogsRouter.delete('/:id', async (request, response, next) => {
+blogsRouter.delete('/:id', middleware.userExtracter, async (request, response, next) => {
     const blog = await Blog.findById(request.params.id)
-    const decodedToken = jwt.verify(request.token, process.env.SECRET)
-    if (!decodedToken.id) {
-        return response.status(401).json({ error: "invalid token" })
-    }
-    const user = await User.findById(decodedToken.id)
+    // console.log('blog', blog);
+    const user = request.user
+    console.log('user from backend', user.id);
+    console.log('user from blog', blog.user);
     if (blog.user.toString() === user.id.toString()) {
         await Blog.findByIdAndDelete(request.params.id)
         response.status(204).end()
@@ -58,7 +57,8 @@ blogsRouter.put('/:id', async (request, response, next) => {
         likes: Number(body.likes),
     }
 
-    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
+    const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true }).populate('user', { username: 1 })
+
     response.json(updatedBlog)
 })
 
