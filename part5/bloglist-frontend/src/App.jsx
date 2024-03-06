@@ -77,12 +77,15 @@ const App = () => {
 
   const deleteBlog = async (BlogToDelete) => {
     if (window.confirm(`Delete ${BlogToDelete.title} ?`)) {
-      // console.log("CCC", BlogToDelete);
-      blogService.remove(BlogToDelete.id)
-      setMessage(`Blog ${BlogToDelete.title} was successfully deleted`)
-      setBlogs(blogs.filter((blog) => blog.id !== BlogToDelete.id))
+      try{
+        const res = await blogService.remove(BlogToDelete.id)
+        setMessage( { content:`Blog ${BlogToDelete.title} was successfully deleted`,type:'success' } )
+        setBlogs(blogs.filter((blog) => blog.id !== BlogToDelete.id))
+      }catch{
+        setMessage( { content:'Unauthorized to delete blog',type:'error' } )
+      }
       setTimeout(() => {
-        setMessage(null)
+        setMessage( { content: null,type: null } )
       }, 5000)
     }
   }
@@ -105,7 +108,7 @@ const App = () => {
             username:
             <input
               type="text"
-              name="Username"
+              id="username"
               value={username}
               onChange={({ target }) => {
                 setUsername(target.value)
@@ -116,14 +119,14 @@ const App = () => {
             password:
             <input
               type="password"
-              name="Password"
+              id="password"
               value={password}
               onChange={({ target }) => {
                 setPassword(target.value)
               }}
             />
           </div>
-          <button type="submit">Login</button>
+          <button id='login-button' type="submit">Login</button>
         </form>
       </>
     )
