@@ -2,11 +2,18 @@ import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { updateVote } from '../reducers/anecdoteReducer'
 import { setNoti, removeNoti } from '../reducers/notificationReducer'
+import anecdoteService from '../services/anecdoteService'
 
 const Anecdote = ({ anecdote }) => {
   const dispatch = useDispatch()
-  const vote = (anecdote) => {
-    dispatch(updateVote(anecdote))
+  const vote = async (anecdote) => {
+    // console.log(anecdote.votes + 1)
+    const newObj = {
+      ...anecdote,
+      votes: anecdote.votes + 1,
+    }
+    const updatedObj = await anecdoteService.update(anecdote.id, newObj)
+    dispatch(updateVote(updatedObj))
     dispatch(setNoti(`you voted '${anecdote.content}'`))
     setTimeout(() => {
       dispatch(removeNoti())
