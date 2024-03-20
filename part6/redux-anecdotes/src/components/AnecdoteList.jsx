@@ -1,25 +1,40 @@
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { updateVote } from '../reducers/anecdoteReducer'
+import { setNoti, removeNoti } from '../reducers/notificationReducer'
 
 const Anecdote = ({ anecdote }) => {
   const dispatch = useDispatch()
-  const vote = (id) => {
-    dispatch(updateVote(id))
+  const vote = (anecdote) => {
+    dispatch(updateVote(anecdote))
+    dispatch(setNoti(`you voted '${anecdote.content}'`))
+    setTimeout(() => {
+      dispatch(removeNoti())
+    }, 2000)
   }
   return (
     <>
       <div>{anecdote.content}</div>
       <div>
         has {anecdote.votes}
-        <button onClick={() => vote(anecdote.id)}>vote</button>
+        <button onClick={() => vote(anecdote)}>vote</button>
       </div>
     </>
   )
 }
 
 const AnecdoteList = () => {
-  const anecdotes = useSelector((state) => state)
+  const anecdotes = useSelector(({ anecdotes, filter }) => {
+    return anecdotes.filter((anecdote) => {
+      const anec = anecdote.content.toLowerCase()
+      if (typeof filter === 'string') {
+        const fil = filter.toLowerCase()
+        return anec.includes(fil)
+      } else {
+        return anecdotes
+      }
+    })
+  })
 
   return (
     <>
