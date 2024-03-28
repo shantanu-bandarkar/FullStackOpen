@@ -8,6 +8,8 @@ const Blog = ({ blog, handleUpdate, handleRemove }) => {
     borderWidth: 1,
     marginBottom: 5,
   }
+  if (!blog) return null
+  // console.log(blog)
   const [visible, setVisible] = useState(false)
 
   const toggleVisibility = () => {
@@ -23,14 +25,16 @@ const Blog = ({ blog, handleUpdate, handleRemove }) => {
   const details = () => {
     return (
       <>
-        <p>{blog.url}</p>
+        <a href={blog.url} target='__blank'>
+          {blog.url}
+        </a>
         <div>
           <span>likes {blog.likes}</span>
           <button id='like-button' onClick={handleUpdateLike}>
             like
           </button>
         </div>
-        <p>{blog.user.username}</p>
+        <p>added by {blog.user.username}</p>
         <button onClick={removeBlog}>remove</button>
       </>
     )
@@ -38,9 +42,10 @@ const Blog = ({ blog, handleUpdate, handleRemove }) => {
 
   return (
     <div className='blog' style={blogStyle}>
-      {blog.title} {blog.author}
-      <button onClick={toggleVisibility}>{visible ? 'hide' : 'view'}</button>
-      {visible && details()}
+      <h2>
+        {blog.title} {blog.author}
+      </h2>
+      {details()}
     </div>
   )
 }

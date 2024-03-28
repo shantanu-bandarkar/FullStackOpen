@@ -12,30 +12,48 @@ import {
   likeBlog,
   removeBlog,
 } from './reducers/blogsReducer'
+import { setUser } from './reducers/loggedInUserReducer'
 import { useDispatch, useSelector } from 'react-redux'
+import { Route, Routes, useMatch } from 'react-router'
+import Users from './components/Users'
+import { fetchUsers } from './reducers/usersReducer'
+import BlogsByUser from './components/BlogsByUser'
+import { Link } from 'react-router-dom'
 
 const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [user, setUser] = useState(null)
   const blogFormRef = useRef()
 
   const dispatch = useDispatch()
+  const user = useSelector((state) => state.loggedUser)
   const fetchedBlogs = useSelector((state) => state.blogs)
+  const fetchedUsers = useSelector((state) => state.users)
+  const userMatch = useMatch('/users/:id')
+  const blogMatch = useMatch('/blogs/:id')
 
   useEffect(() => {
     dispatch(initializeBlogs())
+    dispatch(fetchUsers())
   }, [])
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedUser')
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON)
-      setUser(user)
+      dispatch(setUser(user))
       blogService.setUserToken(user.token)
       setUsername(user.username)
     }
   }, [])
+
+  const individualUser = userMatch
+    ? fetchedUsers.find((user) => user.id === userMatch.params.id)
+    : null
+
+  const individualBlog = blogMatch
+    ? fetchedBlogs.find((blog) => blog.id === blogMatch.params.id)
+    : null
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -43,7 +61,7 @@ const App = () => {
     try {
       const user = await loginService.login({ username, password })
       window.localStorage.setItem('loggedUser', JSON.stringify(user))
-      setUser(user)
+      dispatch(setUser(user))
       blogService.setUserToken(user.token)
       dispatch(setNotification(`Welcome ${username}`))
     } catch (exception) {
@@ -72,7 +90,6 @@ const App = () => {
   const updateBlogLikes = async (blog) => {
     const returnedObj = await blogService.updateLikes(blog)
     dispatch(likeBlog(returnedObj))
-    console.log('AAA', blog)
   }
 
   const deleteBlog = async (BlogToDelete) => {
@@ -94,7 +111,7 @@ const App = () => {
 
   const handleLogout = () => {
     window.localStorage.clear()
-    setUser(null)
+    dispatch(setUser(null))
     setUsername('')
     setPassword('')
   }
@@ -136,6 +153,25 @@ const App = () => {
     )
   }
 
+  const blogList = () => {
+    const blogStyle = {
+      paddingTop: 10,
+      paddingLeft: 2,
+      border: 'solid',
+      borderWidth: 1,
+      marginBottom: 5,
+    }
+    return (
+      <>
+        {fetchedBlogs.map((blog) => (
+          <div className='blog' style={blogStyle} key={blog.id}>
+            <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
+          </div>
+        ))}
+      </>
+    )
+  }
+
   return (
     <>
       <h2>blogs</h2>
@@ -147,19 +183,43 @@ const App = () => {
           logout
         </button>
       </div>
+      <Routes>
+        <Route
+          path='/'
+          element={
+            <>
+              <Togglable buttonLabel='create new blog' ref={blogFormRef}>
+                <BlogForm createBlog={addBlog} />
+              </Togglable>
 
-      <Togglable buttonLabel='create new blog' ref={blogFormRef}>
-        <BlogForm createBlog={addBlog} />
-      </Togglable>
-
-      {fetchedBlogs.map((blog) => (
-        <Blog
-          key={blog.id}
-          blog={blog}
-          handleUpdate={updateBlogLikes}
-          handleRemove={deleteBlog}
+              {/* {fetchedBlogs.map((blog) => (
+                <Blog
+                  key={blog.id}
+                  blog={blog}
+                  handleUpdate={updateBlogLikes}
+                  handleRemove={deleteBlog}
+                />
+              ))} */}
+              {blogList()}
+            </>
+          }
         />
-      ))}
+        <Route path='/users' element={<Users />} />
+        <Route
+          path='/users/:id'
+          element={<BlogsByUser user={individualUser} />}
+        />
+        <Route
+          path='/blogs/:id'
+          element={
+            <Blog
+              blog={individualBlog}
+              handleUpdate={updateBlogLikes}
+              handleRemove={deleteBlog}
+            />
+          }
+        />
+      </Routes>
     </>
   )
 }
