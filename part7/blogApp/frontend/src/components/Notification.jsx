@@ -9,6 +9,6 @@ const Notification = () => {
     return null
   }
 
-  return <div className={`notification ${type}`}>{notification.content}</div>
+  return <div className={`alert alert-${type}`}>{notification.content}</div>
 }
 export default Notification

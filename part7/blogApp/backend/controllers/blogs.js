@@ -33,6 +33,21 @@ blogsRouter.post('/', middleware.userExtracter, middleware.tokenExtracter, async
     response.status(201).json(res)
 })
 
+blogsRouter.post('/:id/comments', async (request, response, next) => {
+    const comment = request.body.comment
+    const blogToComment = await Blog.findById(request.params.id)
+
+    if (!blogToComment) {
+        return response.status(404).json({ message: 'blog not found' })
+    }
+    blogToComment.comments = blogToComment.comments.concat(comment)
+    blogToComment.save()
+
+    const res = await blogToComment.populate('user', { username: 1, name: 1 })
+    response.json(res)
+
+})
+
 blogsRouter.delete('/:id', middleware.userExtracter, async (request, response, next) => {
     const blog = await Blog.findById(request.params.id)
     // console.log('blog', blog);

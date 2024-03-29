@@ -5,11 +5,13 @@ const BlogsByUser = ({ user }) => {
   return (
     <>
       <h2>{user.name}</h2>
-      <div>
+      <div className='container'>
         <h3>added blogs</h3>
-        <ul>
+        <ul className='list-group'>
           {user.blogs.map((blog) => (
-            <li key={blog.id}>{blog.title}</li>
+            <li className='list-group-item list-group-item-light' key={blog.id}>
+              {blog.title}
+            </li>
           ))}
         </ul>
       </div>

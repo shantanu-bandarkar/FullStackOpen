@@ -19,7 +19,8 @@ import Users from './components/Users'
 import { fetchUsers } from './reducers/usersReducer'
 import BlogsByUser from './components/BlogsByUser'
 import { Link } from 'react-router-dom'
-
+import { useNavigate } from 'react-router'
+import { Button } from 'react-bootstrap'
 const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -31,6 +32,7 @@ const App = () => {
   const fetchedUsers = useSelector((state) => state.users)
   const userMatch = useMatch('/users/:id')
   const blogMatch = useMatch('/blogs/:id')
+  const navigate = useNavigate()
 
   useEffect(() => {
     dispatch(initializeBlogs())
@@ -63,9 +65,9 @@ const App = () => {
       window.localStorage.setItem('loggedUser', JSON.stringify(user))
       dispatch(setUser(user))
       blogService.setUserToken(user.token)
-      dispatch(setNotification(`Welcome ${username}`))
+      dispatch(setNotification(`Welcome ${username}`, 'primary'))
     } catch (exception) {
-      dispatch(setNotification('invalid username or password', 'error'))
+      dispatch(setNotification('invalid username or password', 'danger'))
       // console.error(exception);
     }
   }
@@ -103,10 +105,16 @@ const App = () => {
           )
         )
         dispatch(removeBlog(BlogToDelete))
+        navigate('/')
       } catch {
-        dispatch(setNotification('Unauthorized to delete blog', 'error'))
+        dispatch(setNotification('Unauthorized to delete blog', 'danger'))
       }
     }
+  }
+
+  const addComment = async (id, comment) => {
+    const res = await blogService.addComment(id, comment)
+    dispatch(initializeBlogs())
   }
 
   const handleLogout = () => {
@@ -145,63 +153,66 @@ const App = () => {
               }}
             />
           </div>
-          <button id='login-button' type='submit'>
+          <Button id='login-button' type='submit'>
             Login
-          </button>
+          </Button>
         </form>
       </>
     )
   }
 
   const blogList = () => {
-    const blogStyle = {
-      paddingTop: 10,
-      paddingLeft: 2,
-      border: 'solid',
-      borderWidth: 1,
-      marginBottom: 5,
-    }
     return (
-      <>
+      <ul className='list-group'>
         {fetchedBlogs.map((blog) => (
-          <div className='blog' style={blogStyle} key={blog.id}>
-            <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
-          </div>
+          <li className='list-group-item list-group-item-light' key={blog.id}>
+            <Link
+              to={`/blogs/${blog.id}`}
+              className='text-info text-decoration-none'
+            >
+              {blog.title}
+            </Link>
+          </li>
         ))}
-      </>
+      </ul>
     )
   }
 
   return (
     <>
-      <h2>blogs</h2>
+      <nav className='navbar navbar-expand-lg navbar-dark bg-dark'>
+        <ul className='navbar-nav mr-auto'>
+          <li className='nav-item'>
+            <Link to='/' className='nav-link p-3'>
+              blogs
+            </Link>
+          </li>
+          <li className='nav-item'>
+            <Link to='/users' className='nav-link p-3'>
+              users
+            </Link>
+          </li>
+          <li className='nav-item'>
+            <i className='nav-link text-white p-3'>{username} logged in</i>
+          </li>
+        </ul>
+        <Button type='button' onClick={handleLogout} className='ml-auto'>
+          logout
+        </Button>
+      </nav>
+      <h1 className='text-center'>blog app</h1>
       <Notification />
 
-      <div>
-        <span>{username} logged in</span>
-        <button type='button' onClick={handleLogout}>
-          logout
-        </button>
-      </div>
       <Routes>
         <Route
           path='/'
           element={
-            <>
+            <div className='container'>
               <Togglable buttonLabel='create new blog' ref={blogFormRef}>
                 <BlogForm createBlog={addBlog} />
               </Togglable>
-
-              {/* {fetchedBlogs.map((blog) => (
-                <Blog
-                  key={blog.id}
-                  blog={blog}
-                  handleUpdate={updateBlogLikes}
-                  handleRemove={deleteBlog}
-                />
-              ))} */}
               {blogList()}
-            </>
+            </div>
           }
         />
         <Route path='/users' element={<Users />} />
@@ -216,6 +227,7 @@ const App = () => {
               blog={individualBlog}
               handleUpdate={updateBlogLikes}
               handleRemove={deleteBlog}
+              handleComment={addComment}
             />
           }
         />

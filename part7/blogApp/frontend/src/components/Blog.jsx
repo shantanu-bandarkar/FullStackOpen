@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const Blog = ({ blog, handleUpdate, handleRemove }) => {
+const Blog = ({ blog, handleUpdate, handleRemove, handleComment }) => {
   const blogStyle = {
     paddingTop: 10,
     paddingLeft: 2,
@@ -9,12 +9,7 @@ const Blog = ({ blog, handleUpdate, handleRemove }) => {
     marginBottom: 5,
   }
   if (!blog) return null
-  // console.log(blog)
-  const [visible, setVisible] = useState(false)
-
-  const toggleVisibility = () => {
-    setVisible(!visible)
-  }
+  const [comment, setComment] = useState('')
 
   const handleUpdateLike = () => {
     return handleUpdate({ ...blog, likes: blog.likes + 1 })
@@ -41,11 +36,43 @@ const Blog = ({ blog, handleUpdate, handleRemove }) => {
   }
 
   return (
-    <div className='blog' style={blogStyle}>
+    <div className='container' style={blogStyle}>
       <h2>
         {blog.title} {blog.author}
       </h2>
       {details()}
+      {blog.comments && (
+        <>
+          <h3>comments</h3>
+          <div>
+            <input
+              type='text'
+              value={comment}
+              id='cmt'
+              onChange={(event) => {
+                setComment(event.target.value)
+              }}
+            />
+            <button
+              onClick={() => {
+                if (comment === '') {
+                  window.alert('comment cannot be empty')
+                } else {
+                  handleComment(blog.id, comment)
+                }
+                setComment('')
+              }}
+            >
+              add comment
+            </button>
+          </div>
+          <ul>
+            {blog.comments.map((com, index) => (
+              <li key={index}>{com}</li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }
